@@ -1,0 +1,26 @@
+[package]
+name = "new-dice-roller"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs" # LALRPOP preprocessing
+
+
+
+
+[build-dependencies.lalrpop]
+version = "0.19.8"
+features = ["lexer"]
+
+[dependencies]
+rand="*"
+regex = "1"
+
+[dependencies.lalrpop-util]
+version = "0.19.8"
+features = ["lexer"]
+
+
+
+
+
+
