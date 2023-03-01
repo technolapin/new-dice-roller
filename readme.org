@@ -1,0 +1,95 @@
+* Concepts
+** Dices
+*** Kind of dices
+There are two kind of dices:
++ ranges: d6, d10, d20, d100 .....
++ symbolics ({true, false}, {left, right, up, down}, {{blue, 4}, {red, 2}})
+  In the red-blue example, we consider a 6-faced dice with 4 blue sides and 2 red sides
+  The other example are of uniform probability
++ We could also consider hybrid dices, with ranges and symbols being possible outputs
+  {cat, dog, 1..10, yes, no}
+  In this example, cat, dog, 1, 2, 3 .., 10, yes and no are the possible outputs (of equal probabilities)
+  It is very much likely useless, but if we can support this, we do not need to have two separate cases.
+*** State of a dice
+A dice can be thrown, which means that there is always a "cursor" pointing to one of its possible result.
+When we throw a dice, we just pick another random index for the "cursor".
+Most system uses uniform distributions, but we could imagine allowing to chose another kind (normal distribution for instance) at this step.
+(This is definitively a very low priority feature).
+** Buckets
+A bunch of (ordered) dices, it's what's being thrown.
++ It is composed of dices
++ It can be thrown
++ It can be rethrown
++ We can apply filtering on it or fold it into a scalar, a string or whatsoever
+** Script language requirement
+The language should support:
++ standard binary/unary operators (+ - && || / * % .....)
++ functional if
++ let var = thing (with maybe a ;)
++ atoms(signed int, strings, maybe floats?), arrays(of atoms), buckets, dices
++ simple formating using some syntax like "aaa {var} bbb", which is litteraly just "aaa " + var + " bbb" since we will support string concatenation with +
++ while cond {statements} loops
+
+bools will be ints just like in C, probably (this may change)
+
+* Scripts examples
+The goal is to implement the various throws using a specialised simple syntax.
+** Warhammer
+Wharamer v4 throws are actually very complex, and implementing every rule of bonus or malus is a challenge that no one wants to take.
+Here is a simple version of what could be much more complicated, this is semi-automatic, meaning that the player still need to know how to do the throw by hand in order to apply some eventual special rules.
+#+begin_src rust
+// INPUT: score
+// OUTPUT: degrees, is_success, value
+let bucket = Bucket{d10; 2} // unsuren, short for creating a bucket
+bucket.roll()
+let value = (bucket[0]*10 + bucket[1] + 99) %100 +1
+let is_success = (value <= score || value <= 5) && value <= 95
+let degrees = score/10 - bucket[0];
+let success_word = ["FAILURE", "SUCCESS"][is_success] // unsure
+print("Rolled {bucket} ({score}): {success_word} of {degrees} degrees")
+#+end_src
+** Degenesis
+Very simple compared to warhammer
+
+#+begin_src rust
+// INPUT: score
+// OUTPUT: successes, triggers
+let n_dices = min(score, 12)
+let overflow_bonus = score - n_dices
+let bucket = Bucket{d6; n_dices} // unsuren, short for creating a bucket
+bucket.roll()
+let success = count(bucket >= 4) + overflow_bonus
+let triggers = count(bucket == 6)
+let n_ones = count(bucket == 1)
+let result = if success >= goal {"SUCCESS"}
+        else if n_ones <= success {"FAILURE"}
+        else {"CRITICAL FAILURE"}
+   
+print("Rolled {bucket} ({score} success, {triggers} triggers): {result}")
+#+end_src
+** Explosion
+Example of explosion of a bucket of 10d6 on the 6
+If we can write it like this, then we could do more complicated explosions, like changing the treshold between iterations.
+#+begin_src rust
+let bucket = Bucket{d6, 10}
+let exploding = bucket == 6 // taking the 6
+while count(exploding) > 0
+{
+    roll(exploding)
+    bucket += exploding
+    exploding = exploding == 6
+}
+#+end_src
+
+we can also use a list of bucket to keep a better track of the explosions
+
+#+begin_src rust
+let buckets = [Bucket{d6, 10}]
+let exploding = buckets[0] == 6 // taking the 6
+while count(exploding) > 0
+{
+    roll(exploding)
+    buckets += [exploding]
+    exploding = exploding == 6
+}
+#+end_src
