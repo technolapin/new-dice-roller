@@ -1,7 +1,7 @@
 use crate::dice::Dice;
 use crate::bucket::Bucket;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Atom
 {
     Str(String),
@@ -179,12 +179,92 @@ impl Atom
             _ => Err(format!("{:?} % {:?} is not valid", a, b))
         }
     }
+    pub fn or(a: &Self, b: &Self) -> Result<Self, String>
+    {
+        match (a, b)
+        {
+            (Num(a), Num(b)) => Ok(Num(((*a != 0) || (*b != 0)) as i32)),
+            _ => Err(format!("{:?} || {:?} is not valid", a, b))
+        }
+    }
+    pub fn and(a: &Self, b: &Self) -> Result<Self, String>
+    {
+        match (a, b)
+        {
+            (Num(a), Num(b)) => Ok(Num(((*a != 0) && (*b != 0)) as i32)),
+            _ => Err(format!("{:?} && {:?} is not valid", a, b))
+        }
+    }
+    pub fn xor(a: &Self, b: &Self) -> Result<Self, String>
+    {
+        match (a, b)
+        {
+            (Num(a), Num(b)) => Ok(Num(((*a != 0) ^ (*b != 0)) as i32)),
+            _ => Err(format!("{:?} ^ {:?} is not valid", a, b))
+        }
+    }
+
+    pub fn equ(a: &Self, b: &Self) -> Result<Self, String>
+    {
+        match (a, b)
+        {
+            (Num(a), Num(b)) => Ok(Num((a==b) as i32)),
+            (Str(a), Str(b)) => Ok(Num((a==b) as i32)),
+            _ => Err(format!("{:?} == {:?} is not valid", a, b))
+        }
+    }
+    pub fn geq(a: &Self, b: &Self) -> Result<Self, String>
+    {
+        match (a, b)
+        {
+            (Num(a), Num(b)) => Ok(Num((a>=b) as i32)),
+            (Str(a), Str(b)) => Ok(Num((a>=b) as i32)),
+            _ => Err(format!("{:?} >= {:?} is not valid", a, b))
+        }
+    }
+    pub fn leq(a: &Self, b: &Self) -> Result<Self, String>
+    {
+        match (a, b)
+        {
+            (Num(a), Num(b)) => Ok(Num((a<=b) as i32)),
+            (Str(a), Str(b)) => Ok(Num((a<=b) as i32)),
+            _ => Err(format!("{:?} <= {:?} is not valid", a, b))
+        }
+    }
+    pub fn gst(a: &Self, b: &Self) -> Result<Self, String>
+    {
+        match (a, b)
+        {
+            (Num(a), Num(b)) => Ok(Num((a>b) as i32)),
+            (Str(a), Str(b)) => Ok(Num((a>b) as i32)),
+            _ => Err(format!("{:?} > {:?} is not valid", a, b))
+        }
+    }
+    pub fn lst(a: &Self, b: &Self) -> Result<Self, String>
+    {
+        match (a, b)
+        {
+            (Num(a), Num(b)) => Ok(Num((a<b) as i32)),
+            (Str(a), Str(b)) => Ok(Num((a<b) as i32)),
+            _ => Err(format!("{:?} < {:?} is not valid", a, b))
+        }
+    }
+
     pub fn minus(a: &Self) -> Result<Self, String>
     {
         match a
         {
             Num(a) => Ok(Num(-a)),
             _ => Err(format!("- {:?} is not valid", a))
+        }
+    }
+    pub fn not(a: &Self) -> Result<Self, String>
+    {
+        match a
+        {
+            Num(0) => Ok(Num(1)),
+            Num(_) => Ok(Num(0)),
+            _ => Err(format!("! {:?} is not valid", a))
         }
     }
 }

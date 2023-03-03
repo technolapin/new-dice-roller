@@ -7,6 +7,7 @@ pub mod dice;
 pub mod atom;
 pub mod bucket;
 pub mod ast;
+pub mod context;
 use atom::Atom;
 use rng::RNG;
 use dice::*;
@@ -117,7 +118,7 @@ fn calculator1() {
 
 #[test]
 fn ast() {
-    assert!(Expression::Add(Box::new(Expression::Atom(Atom::Num(4))), Box::new(Expression::Atom(Atom::Num(6)))).eval().map(|a| a.as_num()) == Ok(10));
+    assert!(Expression::Add(Box::new(Expression::Atom(Atom::Num(4))), Box::new(Expression::Atom(Atom::Num(6)))).eval() == Ok(Atom::Num(10)));
 }
 
 

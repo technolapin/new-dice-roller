@@ -2,7 +2,8 @@ use crate::atom::Atom;
 use crate::rng::RNG;
 use std::ops::Range;
 
-#[derive(Debug, Clone)]
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DiceFace
 {
     Symbol(String),
@@ -21,7 +22,7 @@ impl DiceFace
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Dice
 {
     faces: Vec<DiceFace>,

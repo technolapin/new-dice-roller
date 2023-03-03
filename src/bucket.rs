@@ -2,7 +2,7 @@ use crate::atom::Atom;
 use crate::rng::RNG;
 use crate::dice::Dice;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Bucket(Vec<Dice>);
 
 impl Bucket
