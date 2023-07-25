@@ -1,4 +1,4 @@
-use crate::atom::Atom;
+use crate::atom::Value;
 use crate::rng::RNG;
 use std::ops::Range;
 
@@ -49,7 +49,7 @@ impl Dice
         self.state = rng.range(0, self.nb_faces);
     }
 
-    pub fn value(&self) -> Atom
+    pub fn value(&self) -> Value
     {
         let mut rmd = self.state;
         for face in &self.faces
@@ -64,11 +64,11 @@ impl Dice
                 {
                     DiceFace::Symbol(s) =>
                     {
-                        return Atom::Str(s.to_string());
+                        return Value::Str(s.to_string());
                     },
                     DiceFace::Range(rg) => 
                     {
-                        return Atom::Num(rg.start + (rmd as i32));
+                        return Value::Num(rg.start + (rmd as i32));
                     }
                 }
             }

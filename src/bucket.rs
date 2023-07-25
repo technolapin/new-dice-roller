@@ -1,4 +1,4 @@
-use crate::atom::Atom;
+use crate::atom::Value;
 use crate::rng::RNG;
 use crate::dice::Dice;
 
@@ -43,9 +43,9 @@ impl Bucket
             dice.roll(rng);
         }
     }
-    pub fn fold<F>(&self, start: Atom, f: F) -> Atom
+    pub fn fold<F>(&self, start: Value, f: F) -> Value
     where
-        F: Fn(Atom, Atom) -> Atom
+        F: Fn(Value, Value) -> Value
     {
         self.0.iter()
             .map(|dice| dice.value())
@@ -53,13 +53,13 @@ impl Bucket
     }
     pub fn filter<F>(&self, f: F) -> Bucket
     where
-        F: Fn(Atom) -> bool
+        F: Fn(Value) -> bool
     {
         Self{0: self.0.iter()
              .filter(|dice| f(dice.value())).cloned().collect()}
     }
     
-    pub fn values(&self) -> Vec<Atom>
+    pub fn values(&self) -> Vec<Value>
     {
         self.0.iter().map(|dice| dice.value()).collect()
     }

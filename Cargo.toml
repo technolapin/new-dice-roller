@@ -3,7 +3,7 @@ name = "new-dice-roller"
 version = "0.1.0"
 edition = "2021"
 build = "build.rs" # LALRPOP preprocessing
-
+exclude = [".*"]
 
 
 
@@ -14,6 +14,9 @@ features = ["lexer"]
 [dependencies]
 rand="*"
 regex = "1"
+
+serenity = { version="0.11", default-features = false, features = ["client", "gateway", "rustls_backend", "model"] }
+tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread"] }
 
 [dependencies.lalrpop-util]
 version = "0.19.8"

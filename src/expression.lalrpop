@@ -1,0 +1,86 @@
+use std::str::FromStr;
+use crate::engine::utils::dice;
+use crate::engine::commands::Command;
+
+grammar;
+
+
+// Atoms
+RollWord = {"d"};
+
+
+Int: i64 =
+{
+    <s:r"[0-9]+"> => i64::from_str(s).unwrap()                      
+}
+
+
+
+// only [a-zA-Z] for now because it conflicts with dices
+pub Identif: String =
+{
+    r#"[[:alpha:]]*"# => {
+        println!("Found identifier : {}", <>);
+        String::from(<>)
+    }
+}
+
+
+
+
+// Math expression
+Expr0: i64 = 
+{
+    Int,
+    "(" <e: Expr> ")" => e,
+    
+}
+
+Expr1: i64 =
+{
+    Expr0,
+    <nb: Expr0> RollWord <e: Expr0> =>
+    {
+        (0..nb).map(|_| dice(e)).sum()
+    }
+}
+
+// Expr1: i64 =
+// {
+//     Expr0,
+// //    RollWord <e: Expr1> => dice(e),
+//     <nb: Expr1> RollWord <e: Expr0> =>
+//     {
+//         (0..nb).map(|_| dice(e)).sum()
+//     }
+// }
+Expr2: i64 =
+{
+    Expr1,
+    <a: Expr2> "*" <b: Expr1> => a*b,
+//    <a: Expr2> "/" <b: Expr1> => a*b,
+}
+
+Expr3: i64 =
+{
+    Expr2,
+    <a: Expr3> "+" <b: Expr2> => a+b,
+    <a: Expr3> "-" <b: Expr2> => a-b,
+}
+
+pub Expr: i64 =
+{
+    Expr3
+}
+
+//
+
+
+pub Cmd: Command =
+{
+    <e: Expr> => Command("#".to_owned(), vec![e]),
+    <cmd: Identif> => Command(cmd, vec![]),
+    <cmd: Cmd> <n: Expr> => {let mut cmd2 = cmd;
+                                 cmd2.1.push(n);
+                             cmd2}
+}

@@ -31,7 +31,53 @@ The language should support:
 + while cond {statements} loops
 
 bools will be ints just like in C, probably (this may change)
+* What can be done with a bucket of dice
+Let n kinds of dices of \(m_n\) faces \(f_{n,m}\) in an alphabet (\Sigma)
 
+Let's assume we have a non-ordered bucket of k of these dices.
+Let the state of the bucket be the faces that the dices currently shows.
+\(State = (f_{n_i, m_i}})_{i\in [1,k]}\)
+What kind of data is contained in this state?
+We can without losing information regroup the identic symbols and just count the occurence of each symbol.
+S can then be seen as a map from the set of symbols \(\Sigma\) to \(\mathbb{N}\) 
+The map can be injective or non-injective, this is a choice to be made.
+
+Every property that we want to measure on the result of the throw must be constructed from this map.
+
+A property P on S is an injectve map \(S->\Sigma_P\) with \Sigma_P the alphabet of possibilities for P.
+It is injective because the property can be measured on any roll.
+
+
+
+
+
+P_s “selects„ values.
+P_i process the selection into
+
+A property might ignore some faces or
+We can consider:
++ working on all the faces
++ taking a subset of the faces
+
+
+
+We can then consider every map
++ the sum of the dices or another group operator
++ the sum of a subset of the possible faces.
++ the sum of the number of faces in a subset
++ the max, min, sum, or whatever other function
+
+
+Let + an operator so that \((\Sigma, +)\) is a group
+
+We
+
+What kind of operation can we do on it?
+
++ roll it
++ partition it
++ reroll a part of it
++ count the
 * Scripts examples
 The goal is to implement the various throws using a specialised simple syntax.
 ** Warhammer
@@ -48,6 +94,8 @@ let degrees = score/10 - bucket[0];
 let success_word = ["FAILURE", "SUCCESS"][is_success] // unsure
 print("Rolled {bucket} ({score}): {success_word} of {degrees} degrees")
 #+end_src
+
+
 ** Degenesis
 Very simple compared to warhammer
 
@@ -67,6 +115,7 @@ let result = if success >= goal {"SUCCESS"}
    
 print("Rolled {bucket} ({score} success, {triggers} triggers): {result}")
 #+end_src
+
 ** Explosion
 Example of explosion of a bucket of 10d6 on the 6
 If we can write it like this, then we could do more complicated explosions, like changing the treshold between iterations.
@@ -93,3 +142,30 @@ while count(exploding) > 0
     exploding = exploding == 6
 }
 #+end_src
+
+** TODO Edge enfin le truc avec les dés nuls là
+#+begin_src rust
+let die_white = Dice("success")
+let bucket = []
+#+end_src
+
+
+* ROADMAP
+** First version: hard coded simple bot
+Three things are to be implemented:
+*** a discord backend
+  receives messages from discord with all their metadata
+  extract the relevant information
+  push the commands into the game engine
+*** a "game engine"
+  Have an input buffer (whose elements are command to be processed + relevant metadata such as the user id or username)
+  Have an output buffer (whose elements are messages and options such as to whom this message is addressed).
+  Have some internal data such as a database for long-term behavior
+*** a command engine
+  the ast grammar for mathematical expression + a big match for all the commands who will be hard-coded in rust.
+
+  | discord backend                                 | game engine                                                    | command engine |
+  |-------------------------------------------------+----------------------------------------------------------------+----------------|
+  | fech/parse messages and feed it to game engine  | recieve messages from discord layer, store them for processing | doign shit     |
+  | receive messages from game engine and send them | process messages and feeding output to output buffer           |                |
+

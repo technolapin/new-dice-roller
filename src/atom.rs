@@ -2,17 +2,25 @@ use crate::dice::Dice;
 use crate::bucket::Bucket;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Atom
+pub enum Value
 {
     Str(String),
     Num(i32),
     Die(Dice),
-    Buc(Bucket)
+    Buc(Bucket),
+    Nil
 }
 
-use Atom::*;
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Atom
+{
+    Ident(String), // variables, ....
+    Value(Value)
+}
 
-impl Atom
+use Value::*;
+
+impl Value
 {
     pub fn as_num(&self) -> Result<i32, String>
     {
@@ -31,92 +39,8 @@ impl Atom
         }
     }
 }
-/*
-impl std::ops::Add for Atom
-{
-    type Output = Self;
-    fn add(self, rhs: Self) -> Self
-    {
-        match (self, rhs)
-        {
-            (Num(a), Num(b)) => Num(a+b),
-            (Str(a), Str(b)) => Str(a+&b),
-            (Num(a), Str(b)) => Str(format!("{}{}", a, b)),
-            (Str(a), Num(b)) => Str(format!("{}{}", a, b))
-        }
-    }
-}
 
-
-impl std::ops::Sub for Atom
-{
-    type Output = Self;
-    fn sub(self, rhs: Self) -> Self
-    {
-        match (self, rhs)
-        {
-            (Num(a), Num(b)) => Num(a-b),
-            _ => Str("#error of -#".to_string())
-        }
-    }
-}
-
-
-impl std::ops::Mul for Atom
-{
-    type Output = Self;
-    fn mul(self, rhs: Self) -> Self
-    {
-        match (self, rhs)
-        {
-            (Num(a), Num(b)) => Num(a*b),
-            _ => Str("#error of *#".to_string())
-        }
-    }
-}
-
-impl std::ops::Div for Atom
-{
-    type Output = Self;
-    fn div(self, rhs: Self) -> Self
-    {
-        match (self, rhs)
-        {
-            (Num(a), Num(b)) => Num(a/b),
-            _ => Str("#error of *#".to_string())
-        }
-    }
-}
-impl std::ops::Rem for Atom
-{
-    type Output = Self;
-    fn rem(self, rhs: Self) -> Self
-    {
-        match (self, rhs)
-        {
-            (Num(a), Num(b)) => Num(a%b),
-            _ => Str("#error of *#".to_string())
-        }
-    }
-}
-
-
-impl std::ops::Neg for Atom
-{
-    type Output = Self;
-    fn neg(self) -> Self
-    {
-        match self
-        {
-            Num(a) => Num(-a),
-            _ => Str("wtf".to_string())
-        }
-    }
-}
-
-*/
-
-impl std::fmt::Display for Atom
+impl std::fmt::Display for Value
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
     {
@@ -125,14 +49,15 @@ impl std::fmt::Display for Atom
             Num(n) => write!(f, "{}", n),
             Str(s) => write!(f, "{}", s),
             Die(d) => write!(f, "{:?}", d),
-            Buc(b) => write!(f, "{:?}", b)
+            Buc(b) => write!(f, "{:?}", b),
+            Nil => write!(f, "()")
         }
     }
 }
 
 
     
-impl Atom
+impl Value
 {
     pub fn add(a: &Self, b: &Self) -> Result<Self, String>
     {
