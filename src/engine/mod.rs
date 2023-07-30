@@ -4,9 +4,9 @@ pub mod ast;
 pub use crate::communication::{InputMessage, OutputMessage};
 
 
-pub fn parse(s: &str) -> Result<commands::Command, String>
+pub fn parse(s: &str) -> Result<Vec<commands::Command>, String>
 {
-    return crate::expression::CmdParser::new().parse(s).map_err(|e| format!("{:?}", e));
+    return crate::expression::CmdListParser::new().parse(s).map_err(|e| format!("{:?}", e));
 }
 
 

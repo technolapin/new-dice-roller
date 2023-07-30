@@ -1,50 +1,132 @@
 use crate::engine::utils::*;
+use new_dice_roller::misc::Error;
+use crate::Storage;
+
 #[derive(Debug)]
-pub struct Command(pub String,
-                   pub Vec<i64>);
+pub enum Value
+{
+    Id(String),
+    Num(i64),
+    Str(String)
+}
 
+#[derive(Debug)]
+pub enum ValueRef<'a>
+{
+    Id(&'a str),
+    Num(i64),
+    Str(&'a str)
+}
 
+impl Value
+{
+    fn to_ref<'a>(&'a self) -> ValueRef<'a>
+    {
+        match self
+        {
+            Value::Id(id) => ValueRef::Id(&id),
+            Value::Num(n) => ValueRef::Num(*n),
+            Value::Str(s) => ValueRef::Str(&s)
+        }
+    }
+}
+
+impl std::fmt::Display for Value
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error>
+    {
+        match self
+        {
+            Value::Id(id) => write!(f, "{}", id),
+            Value::Num(n) => write!(f, "{}", n),
+            Value::Str(s) => write!(f, r#""{}""#, s)
+        }
+    }
+}
+impl<'a> std::fmt::Display for ValueRef<'a>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error>
+    {
+        match self
+        {
+            ValueRef::Id(id) => write!(f, "{}", id),
+            ValueRef::Num(n) => write!(f, "{}", n),
+            ValueRef::Str(s) => write!(f, r#"{}""#, s)
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Command
+{
+    pub lst: Vec<Value>
+}
 
 impl Command
 {
-    pub fn eval(&self) -> Result<String, Error>
+    pub fn eval(&self, userid: u64) -> Result<String, Error>
     {
-        Ok(match (self.0.as_str(), &self.1[..])
+        use ValueRef::{Id, Num, Str};
+        let peek = self.lst.iter().map(|v|v.to_ref()).collect::<Vec<ValueRef>>();
+        let (title, args) = match peek.first()
         {
-            ("#", v) => v.iter().map(|n| format!("{}",n)).reduce(|acc, s| acc + " " + s.as_str())
-                           .unwrap_or_default(),
-            ("wh", &[score]) =>
-            warhammer(score),
+            None => Err(Error("Empty command!".to_owned()))?,
+            Some(Str(a)) => (Some(a), &peek[1..]),
+            _ => (None, &peek[..])
+        };
+        let output = match args
+        {
+            &[] => String::new(),
+            &[Num(v), ..] => args.iter().map(|n| format!("{}",n)).reduce(|acc, s| acc + " " + s.as_str())
+                .unwrap_or_default(),
+            &[Str(s), ..] => args.iter().map(|n| format!("{}",n)).reduce(|acc, s| acc + " " + s.as_str())
+                .unwrap_or_default(),
+            &[Id("#"), Num(v)] => format!("{}", v),
 
-
-            ("sr", &[n]) => shadowrun(n, None, false),
-            ("sr", &[n, goal]) => shadowrun(n, Some(goal), false),
-            ("srboom", &[n]) => shadowrun(n, None, true),
-            ("srboom", &[n, goal]) => shadowrun(n, Some(goal), true),
+            &[Id("register"), Id(key), Str(cmd)] => {
+                unimplemented!();
+                Storage::open()?
+                    .store_command(userid as i64, key, cmd)?;
+                format!(r#"Registered command "{}" as "{}""#, cmd, key)
+            },
             
-            ("dg", &[n]) => degenesis(n, None),
-            ("dg", &[n, goal]) => degenesis(n, Some(goal)),
-
-            ("trud", &[n]) => trudvang(n, 11, 0),
-            ("trud", &[n, bonus]) => trudvang(n, 11, bonus),
-            ("trudboom", &[n, expl_tresh]) => trudvang(n, expl_tresh, 0),
-            ("trudboom", &[n, expl_tresh, bonus]) => trudvang(n, expl_tresh, bonus),
-
-            ("brigandine", &[n, expl_tresh]) => brigandine(n, expl_tresh),
-
-            ("vamp", &[score, difficulty]) => vampire(score, difficulty, false),
-            ("vampspe", &[score, difficulty]) => vampire(score, difficulty, true),
+            &[Id("wh"), Num(score)] => warhammer(score),
 
 
-            ("shaan", &[]) =>
+            &[Id("sr"), Num(n)] => shadowrun(n, None, false),
+            &[Id("sr"), Num(n), Num(goal)] => shadowrun(n, Some(goal), false),
+            &[Id("srboom"), Num(n)] => shadowrun(n, None, true),
+            &[Id("srboom"), Num(n), Num(goal)] => shadowrun(n, Some(goal), true),
+            
+            &[Id("dg"), Num(n)] => degenesis(n, None),
+            &[Id("dg"), Num(n), Num(goal)] => degenesis(n, Some(goal)),
+
+            &[Id("trud"), Num(n)] => trudvang(n, 11, 0),
+            &[Id("trud"), Num(n), Num(bonus)] => trudvang(n, 11, bonus),
+            &[Id("trudboom"), Num(n), Num(expl_tresh)] => trudvang(n, expl_tresh, 0),
+            &[Id("trudboom"), Num(n), Num(expl_tresh), Num(bonus)] => trudvang(n, expl_tresh, bonus),
+
+            &[Id("brigandine"), Num(n), Num(expl_tresh)] => brigandine(n, expl_tresh),
+
+            &[Id("vamp"), Num(score), Num(difficulty)] => vampire(score, difficulty, false),
+            &[Id("vampspe"), Num(score), Num(difficulty)] => vampire(score, difficulty, true),
+
+
+            &[Id("shaan")] =>
             {
                 format!("Corp: {}   Esprit: {}   Âme: {}", dice(10), dice(10), dice(10))
             }
 
-            
             _ => Err(Error(format!("Unknown command pattern {:?}", self)))?
+                
+        };
+
+        match title
+        {
+            Some(title) => Ok(format!("```markdown\n## {}\n{}```", title, output)),
+            None => Ok(format!("```markdown\n{}```", output))
+        }
             
-        })
     }
 }
 

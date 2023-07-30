@@ -1,13 +1,13 @@
 use std::str::FromStr;
 use crate::engine::utils::dice;
-use crate::engine::commands::Command;
+use crate::engine::commands::{Command, Value};
 
 grammar;
 
 
 // Atoms
 RollWord = {"d"};
-
+ListSepToken = ";";
 
 Int: i64 =
 {
@@ -20,7 +20,7 @@ Int: i64 =
 pub Identif: String =
 {
     r#"[[:alpha:]]*"# => {
-        println!("Found identifier : {}", <>);
+//        println!("Found identifier : {}", <>);
         String::from(<>)
     }
 }
@@ -76,11 +76,37 @@ pub Expr: i64 =
 //
 
 
+Str: String =
+{
+        <s:r#""[^"]*""#> => format!("{}", &s[1..s.len()-1]),
+        <s:r#"'[^']*'"#> => format!("{}", &s[1..s.len()-1])
+}
+
+Val: Value =
+{
+    <e: Expr> => Value::Num(e),
+    <id: Identif> => Value::Id(id),
+    <s: Str> => Value::Str(s),
+}
+
+
+
+
+
 pub Cmd: Command =
 {
-    <e: Expr> => Command("#".to_owned(), vec![e]),
-    <cmd: Identif> => Command(cmd, vec![]),
-    <cmd: Cmd> <n: Expr> => {let mut cmd2 = cmd;
-                                 cmd2.1.push(n);
-                             cmd2}
+    <v: Val> => Command{lst: vec![v]},
+    <cmd: Cmd> <v: Val> => {let mut cmd2 = cmd;
+                            cmd2.lst.push(v);
+                            cmd2}
+}
+
+pub CmdList: Vec<Command> =
+{
+    <cmd: Cmd> => vec![cmd],
+    <lst: CmdList> ListSepToken <cmd: Cmd> => {
+        let mut v = lst;
+        v.push(cmd);
+        v
+    }
 }

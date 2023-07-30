@@ -144,6 +144,10 @@
 mod discord;
 mod engine;
 mod communication;
+
+pub mod storage;
+use storage::Storage;
+
 pub use discord::Discord;
 pub use engine::World;
 pub use communication::*;
@@ -153,25 +157,16 @@ use tokio::sync::RwLock;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use engine::ast::*;
+
+use serenity::model::channel::Message;
+
 /*
 discord sur thread spawné, en async
 world est sync
 */
 #[tokio::main]
 async fn main() {
-    let (input_tx, mut input_rx) = tokio::sync::mpsc::channel::<InputMessage>(32);
-    let (output_tx, mut output_rx) = tokio::sync::mpsc::channel::<OutputMessage>(32);
 
-    let mut discord = Discord::new("!".to_owned(),
-                                   |cmd: &str| Some(cmd.chars().rev().collect::<String>()),
-                                   input_tx,
-                                   output_rx).await;
-//    discord.send();
-
-    
-    let mut input  = input_rx;
-    let     output = output_tx;
-    let mut world = World::new(input, output);
     let cmd_test = vec![
         "wh 110+20",
         "wh 14 59-23*2 (69)+2*4",
@@ -180,21 +175,40 @@ async fn main() {
         "1d10+2",
         "1d10+8",
         "sr8 120",
-        "124 51 152213 6+5 13d5"
+        "124 51 152213 6+5 13d5",
+        "wh 45; wh 110+10; dg 18 4; vamp 13 5",
+        r#""Jet de foca" wh 110+10;"Jet d'incant" wh 110+20; 1d10"#,
+        "'test' wh 110",
+        r#""test""#,
+        "1", "'a'"
     ];
     for s in cmd_test
     {
-        let ex = engine::parse(s);
-        print!("{:?}           ", ex);
-        println!("{:?}", ex.map(|cmd| cmd.eval()));
+        match engine::parse(s)
+        {
+            Err(err) => println!("Error: {:?}", err),
+            Ok(cmd_lst) =>
+            {
+                for cmd in cmd_lst
+                {
+                    println!("{:?}", cmd.eval(0));
+                }println!();
+            }
+        }
     }
     
-    // loop
-    // {
-    //     discord.send();
-    //     world.process_all().await;
-    // }
-
-    
+    Discord::run("!".to_owned(),
+                 |cmd: &str, msg: &Message|
+                 {
+                     match engine::parse(cmd)
+                     {
+                         Ok(lst) => Some(lst.iter().map(|cmd| match cmd.eval(msg.author.id.0)
+                                                        {
+                                                            Ok(s) => s,
+                                                            Err(err) => format!("{:?}", err)
+                                                        }).collect::<Vec<String>>().join("\n")),
+                         Err(err) => Some(format!("{:?}", err))
+                     }
+                 }).await;    
 }
 
