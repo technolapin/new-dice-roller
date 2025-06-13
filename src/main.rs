@@ -160,6 +160,97 @@ use engine::ast::*;
 
 use serenity::model::channel::Message;
 
+
+mod algebraic
+{
+    use std::collections::HashMap;
+    use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign,  MulAssign,  DivAssign, Neg};
+
+
+    trait Algebra: Clone + Add + Sub + Mul + Div + AddAssign + SubAssign +  MulAssign +  DivAssign + Neg {}
+    
+    #[derive(Clone)]
+    struct AnyVector<T: Algebra>
+    {
+        data: HashMap<String, T>
+    }
+
+    macro_rules! impl_algebraic_for_hashmap {
+    ($trait:ident, $func:ident, $op_trait:path, $op_func:ident) => {
+        impl<T> $op_trait for HashMap<String, T>
+        where
+            T: Clone + $trait<Output = T>,
+        {
+            type Output = HashMap<String, T>;
+
+            fn $func(mut self, rhs: HashMap<String, T>) -> Self::Output {
+                for (k, v) in rhs {
+                    self.entry(k)
+                        .and_modify(|e| *e = e.clone().$func(v.clone()))
+                        .or_insert(v);
+                }
+                self
+            }
+        }
+    };
+    }
+
+
+    // macro_rules! impl_algebraic_trait
+    // {
+    //     ($trait_name: ident, $trait_fun: ident) =>
+    //     {
+    //         impl<T: Algebra> $trait_name<AnyVector<T>> for AnyVector<T>
+    //         {
+    //             type Output = AnyVector<T>;
+    //             fn $trait_fun(self, rhs: AnyVector<T>) -> Self
+    //             {
+    //                 let mut out = self.clone();
+    //                 for (key, val) in rhs.data.into_iter()
+    //                 {
+    //                     if let Some(coord) = out.data.get_mut(&key)
+    //                     {
+    //                         *coord = <T as $trait_name<T>>::$trait_fun(*coord, val);
+    //                     }
+    //                     else
+    //                     {
+    //                         out.data.insert(key, val);
+    //                     }
+    //                 }
+    //                 out
+    //             }
+    //         }
+    //     }
+    // }
+    // impl_algebraic_trait!(Add, add);
+
+
+//impl_from!(rusqlite::Error);
+        
+    // impl<T: Algebra> Add<AnyVector<T>> for AnyVector<T>
+    // {
+    //     type Output = AnyVector<T>;
+    //     fn add(self, rhs: AnyVector<T>) -> AnyVector<T>
+    //     {
+    //         let mut out = self.clone();
+    //         for (key, val) in rhs.data.into_iter()
+    //         {
+    //             if let Some(coord) = out.data.get_mut(&key)
+    //             {
+    //                 *coord += val;
+    //             }
+    //             else
+    //             {
+    //                 out.data.insert(key, val);
+    //             }
+    //         }
+    //         out
+    //     }
+    // }
+}
+
+
+
 /*
 discord sur thread spawné, en async
 world est sync
